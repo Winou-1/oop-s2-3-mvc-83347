@@ -1112,6 +1112,125 @@ public class VgcTests
         Assert.Empty(ctx.FacultyCourseAssignments);
     }
 
+    [Fact]
+    public async Task BranchesController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new BranchesController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit((int?)null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new Branch { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+    }
+
+    [Fact]
+    public async Task CoursesController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new CoursesController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit((int?)null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new Course { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+    }
+
+    [Fact]
+    public async Task StudentProfilesController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new StudentProfilesController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new StudentProfile { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+    }
+
+    [Fact]
+    public async Task FacultyProfilesController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new FacultyProfilesController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit((int?)null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new FacultyProfile { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+    }
+
+    [Fact]
+    public async Task EnrolmentsController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new EnrolmentsController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit((int?)null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new CourseEnrolment { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+    }
+
+    [Fact]
+    public async Task ExamsController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new ExamsController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit((int?)null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new Exam { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.ReleaseResults(9999));
+    }
+
+    [Fact]
+    public async Task AssignmentsController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new AssignmentsController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Details(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new Assignment { Id = 2 }));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+    }
+
+    [Fact]
+    public async Task AttendanceController_UnhappyPaths_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var c = new AttendanceController(ctx);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Toggle(9999, 1));
+        var user = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
+            [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin")]));
+        c.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = user } };
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Index(9999));
+    }
+
     public class FakeTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
     {
         public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context)
