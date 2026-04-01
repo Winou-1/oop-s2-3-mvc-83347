@@ -863,7 +863,23 @@ public class VgcTests
         var saved = await ctx.Courses.FindAsync(course.Id);
         Assert.Equal("Advanced Software Dev", saved!.Name);
     }
+    // ── TEST 18: HomeController - Index et Privacy ────────────────────────
 
+    [Fact]
+    public void HomeController_Index_ReturnsView()
+    {
+        var controller = new HomeController();
+        var result = controller.Index();
+        Assert.IsType<Microsoft.AspNetCore.Mvc.ViewResult>(result);
+    }
+
+    [Fact]
+    public void HomeController_Privacy_ReturnsView()
+    {
+        var controller = new HomeController();
+        var result = controller.Privacy();
+        Assert.IsType<Microsoft.AspNetCore.Mvc.ViewResult>(result);
+    }
     public class FakeTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
     {
         public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context)
