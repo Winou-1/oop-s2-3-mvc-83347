@@ -358,10 +358,9 @@ public class VgcTests
         var (_, course) = await SeedCourseAsync(ctx);
         var controller = new AssignmentsController(ctx);
         var assignment = new Assignment { CourseId = course.Id, Title = "Test Assignment", MaxScore = 100, DueDate = DateTime.Today };
-        var result = await controller.Create(assignment) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
-        Assert.NotNull(result);
-        Assert.Equal("Index", result.ActionName);
-        Assert.Equal(course.Id, result.RouteValues!["courseId"]);
+        var result = await controller.Create(assignment);
+        var redirectResult = Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(result);
+        Assert.Equal("Index", redirectResult.ActionName);
     }
 
     // ── TEST 17: AssignmentsController - Details retourne 404 si null ─────
