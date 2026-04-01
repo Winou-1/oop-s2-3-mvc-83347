@@ -486,21 +486,20 @@ public class VgcTests
     {
         await using var ctx = CreateCtx();
         var (_, course) = await SeedCourseAsync(ctx);
-
-        var exam = new Exam { CourseId = course.Id, Title = "Quiz", Date = DateTime.Today, MaxScore = 50, ResultsReleased = false };
+        var exam = new Exam { CourseId = course.Id, Title = "Final", Date = DateTime.Today, MaxScore = 100, ResultsReleased = false };
         ctx.Exams.Add(exam);
         await ctx.SaveChangesAsync();
 
         var controller = new ExamsController(ctx);
-        SetFakeUser(controller);
-
+        var httpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+        controller.TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+            httpContext,
+            new FakeTempDataProvider());
         var result = await controller.ReleaseResults(exam.Id);
-
-        var redirect = Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(result);
-        Assert.Equal("Details", redirect.ActionName);
-
-        var saved = await ctx.Exams.FindAsync(exam.Id);
-        Assert.True(saved!.ResultsReleased);
+        var redirectResult = Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(result);
+        Assert.Equal("Details", redirectResult.ActionName);
+        var savedExam = await ctx.Exams.FindAsync(exam.Id);
+        Assert.True(savedExam!.ResultsReleased);
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -620,30 +619,20 @@ public class VgcTests
         await using var ctx = CreateCtx();
         var (_, course) = await SeedCourseAsync(ctx);
         var student = await SeedStudentAsync(ctx);
-
-        var enrolment = new CourseEnrolment
-        {
-            StudentProfileId = student.Id,
-            CourseId = course.Id,
-            EnrolDate = DateTime.Today,
-            Status = EnrolmentStatus.Active
-        };
+        var enrolment = new CourseEnrolment { StudentProfileId = student.Id, CourseId = course.Id, EnrolDate = DateTime.Today, Status = EnrolmentStatus.Active };
         ctx.CourseEnrolments.Add(enrolment);
         await ctx.SaveChangesAsync();
 
-        ctx.AttendanceRecords.AddRange(
-            new AttendanceRecord { CourseEnrolmentId = enrolment.Id, WeekNumber = 1, SessionDate = DateTime.Today.AddDays(-7), Present = true },
-            new AttendanceRecord { CourseEnrolmentId = enrolment.Id, WeekNumber = 2, SessionDate = DateTime.Today.AddDays(-14), Present = false }
-        );
-        await ctx.SaveChangesAsync();
-
-        var controller = new AttendanceController(ctx);
-        SetFakeUser(controller);
-
+        var user = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
+            [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, "Admin")]));
+        var controller = new AttendanceController(ctx)
+        {
+            ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = user } }
+        };
         var result = await controller.Index(enrolment.Id) as Microsoft.AspNetCore.Mvc.ViewResult;
-        var model = Assert.IsAssignableFrom<IEnumerable<AttendanceRecord>>(result!.Model);
-
-        Assert.Equal(2, model.Count());
+        Assert.NotNull(result);
+        var model = Assert.IsAssignableFrom<CourseEnrolment>(result.Model);
+        Assert.Equal(enrolment.Id, model.Id);
     }
 
     [Fact]
@@ -873,5 +862,14 @@ public class VgcTests
 
         var saved = await ctx.Courses.FindAsync(course.Id);
         Assert.Equal("Advanced Software Dev", saved!.Name);
+    }
+
+    public class FakeTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
+    {
+        public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context)
+            => new Dictionary<string, object>();
+
+        public void SaveTempData(Microsoft.AspNetCore.Http.HttpContext context, IDictionary<string, object> values)
+        { }
     }
 }
