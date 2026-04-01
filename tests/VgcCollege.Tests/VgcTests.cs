@@ -1140,7 +1140,8 @@ public class VgcTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new Course { Id = 2 }));
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
-        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+        var deleteResult = await c.DeleteConfirmed(9999);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(deleteResult);
     }
 
     [Fact]
@@ -1214,7 +1215,8 @@ public class VgcTests
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Edit(1, new Assignment { Id = 2 }));
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(null));
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Delete(9999));
-        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.DeleteConfirmed(9999));
+        var deleteResult = await c.DeleteConfirmed(9999);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(deleteResult);
     }
 
     [Fact]
