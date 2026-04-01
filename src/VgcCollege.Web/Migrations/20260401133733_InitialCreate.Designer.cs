@@ -11,7 +11,7 @@ using VgcCollege.Web.Data;
 namespace VgcCollege.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260401102315_InitialCreate")]
+    [Migration("20260401133733_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
