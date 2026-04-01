@@ -1223,7 +1223,7 @@ public class VgcTests
     public async Task AttendanceController_UnhappyPaths_ReturnsNotFound()
     {
         await using var ctx = CreateCtx();
-        var c = new AttendanceController(ctx);
+        var c = new AttendanceController(ctx); 
 
         Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(await c.Toggle(9999, 1));
         var user = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
