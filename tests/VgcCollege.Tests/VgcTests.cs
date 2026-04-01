@@ -880,6 +880,71 @@ public class VgcTests
         var result = controller.Privacy();
         Assert.IsType<Microsoft.AspNetCore.Mvc.ViewResult>(result);
     }
+
+
+    [Fact]
+    public async Task StudentProfilesController_Create_ValidModel_RedirectsToIndex()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new StudentProfilesController(ctx);
+        var student = new StudentProfile { IdentityUserId = "new-uid", Name = "New Student", Email = "new@vgc.ie", StudentNumber = "S123" };
+        var result = await controller.Create(student) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        Assert.Single(ctx.StudentProfiles);
+    }
+
+    [Fact]
+    public async Task StudentProfilesController_Edit_ValidModel_RedirectsToIndex()
+    {
+        await using var ctx = CreateCtx();
+        var student = await SeedStudentAsync(ctx);
+        var controller = new StudentProfilesController(ctx);
+
+        student.Name = "Updated Name";
+        var result = await controller.Edit(student.Id, student) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        var saved = await ctx.StudentProfiles.FindAsync(student.Id);
+        Assert.Equal("Updated Name", saved!.Name);
+    }
+
+    [Fact]
+    public async Task StudentProfilesController_DeleteConfirmed_RemovesStudent()
+    {
+        await using var ctx = CreateCtx();
+        var student = await SeedStudentAsync(ctx);
+        var controller = new StudentProfilesController(ctx);
+        var result = await controller.DeleteConfirmed(student.Id) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        Assert.Empty(ctx.StudentProfiles); 
+    }
+
+    [Fact]
+    public async Task FacultyProfilesController_Create_ValidModel_RedirectsToIndex()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new FacultyProfilesController(ctx);
+        var faculty = new FacultyProfile { IdentityUserId = "fac-new", Name = "New Faculty", Email = "fac@vgc.ie" };
+        var result = await controller.Create(faculty) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+    }
+
+    [Fact]
+    public async Task FacultyProfilesController_DeleteConfirmed_RemovesFaculty()
+    {
+        await using var ctx = CreateCtx();
+        var faculty = await SeedFacultyAsync(ctx);
+        var controller = new FacultyProfilesController(ctx);
+        var result = await controller.DeleteConfirmed(faculty.Id) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        Assert.Empty(ctx.FacultyProfiles);
+    }
+
+
     public class FakeTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
     {
         public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context)
