@@ -945,6 +945,70 @@ public class VgcTests
     }
 
 
+    [Fact]
+    public async Task StudentProfilesController_Create_InvalidModel_ReturnsView()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new StudentProfilesController(ctx);
+
+        controller.ModelState.AddModelError("Name", "Required");
+        var student = new StudentProfile();
+
+        var result = await controller.Create(student) as Microsoft.AspNetCore.Mvc.ViewResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(student, result.Model);
+    }
+
+    [Fact]
+    public async Task FacultyProfilesController_Create_InvalidModel_ReturnsView()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new FacultyProfilesController(ctx);
+
+        controller.ModelState.AddModelError("Email", "Invalid");
+        var faculty = new FacultyProfile();
+
+        var result = await controller.Create(faculty) as Microsoft.AspNetCore.Mvc.ViewResult;
+
+        Assert.NotNull(result);
+        Assert.Equal(faculty, result.Model);
+    }
+
+    [Fact]
+    public async Task CoursesController_Details_NullId_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new CoursesController(ctx);
+
+        var result = await controller.Details(null);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task CoursesController_Details_NotFoundId_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new CoursesController(ctx);
+
+        var result = await controller.Details(9999);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task StudentProfilesController_Edit_NullId_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new StudentProfilesController(ctx);
+
+        var result = await controller.Edit((int?)null);
+
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
+    }
+
+
     public class FakeTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
     {
         public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context)
