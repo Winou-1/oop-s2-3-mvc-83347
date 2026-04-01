@@ -1,0 +1,90 @@
+﻿@model VgcCollege.Web.Domain.StudentProfile
+@using VgcCollege.Web.Domain
+@{
+    ViewData["Title"] = "My Profile";
+    var releasedResults = (IList<ExamResult>)ViewBag.ReleasedExamResults;
+}
+
+<h1>My Profile</h1>
+<hr />
+
+<div class="row mb-4">
+    <div class="col-md-5">
+        <dl class="row">
+            <dt class="col-sm-4">Name</dt>
+            <dd class="col-sm-8">@Model.Name</dd>
+            <dt class="col-sm-4">Student No.</dt>
+            <dd class="col-sm-8"><code>@Model.StudentNumber</code></dd>
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8">@Model.Email</dd>
+            <dt class="col-sm-4">Phone</dt>
+            <dd class="col-sm-8">@(Model.Phone ?? "—")</dd>
+            <dt class="col-sm-4">Address</dt>
+            <dd class="col-sm-8">@(Model.Address ?? "—")</dd>
+            <dt class="col-sm-4">DOB</dt>
+            <dd class="col-sm-8">@(Model.DateOfBirth?.ToShortDateString() ?? "—")</dd>
+        </dl>
+    </div>
+</div>
+
+<h3>My Enrolments (@Model.Enrolments.Count)</h3>
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr><th>Course</th><th>Enrolled</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model.Enrolments)
+        {
+            <tr>
+                <td>@e.Course?.Name</td>
+                <td>@e.EnrolDate.ToShortDateString()</td>
+                <td><span class="badge @(e.Status == EnrolmentStatus.Active ? "bg-success" : "bg-secondary")">@e.Status</span></td>
+                <td>
+                    <a asp-controller="Attendance" asp-action="Index" asp-route-enrolmentId="@e.Id"
+                       class="btn btn-sm btn-outline-info">Attendance</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>My Assignment Results (@Model.AssignmentResults.Count)</h3>
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr><th>Assignment</th><th>Score</th><th>Feedback</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.AssignmentResults)
+        {
+            <tr>
+                <td>@r.Assignment?.Title</td>
+                <td>@r.Score / @r.Assignment?.MaxScore</td>
+                <td class="text-muted"><em>@(r.Feedback ?? "—")</em></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>My Exam Results</h3>
+@if (!releasedResults.Any())
+{
+    <div class="alert alert-info">No released exam results yet.</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr><th>Exam</th><th>Score</th><th>Grade</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in releasedResults)
+            {
+                <tr>
+                    <td>@r.Exam?.Title</td>
+                    <td>@r.Score / @r.Exam?.MaxScore</td>
+                    <td><span class="badge bg-primary">@r.Grade</span></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

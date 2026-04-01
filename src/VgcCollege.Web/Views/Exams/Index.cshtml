@@ -1,0 +1,72 @@
+﻿@model IEnumerable<VgcCollege.Web.Domain.Exam>
+@{
+    ViewData["Title"] = "Exams";
+    bool isAdmin = User.IsInRole("Admin");
+    bool isStudent = User.IsInRole("Student");
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Exams</h1>
+    @if (isAdmin)
+    {
+        <a asp-action="Create" class="btn btn-success">+ New Exam</a>
+    }
+</div>
+
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Title</th>
+            <th>Course</th>
+            <th>Date</th>
+            <th>Max Score</th>
+            <th>Results</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var exam in Model)
+        {
+            <tr>
+                <td>@exam.Title</td>
+                <td>@exam.Course?.Name</td>
+                <td>@exam.Date.ToShortDateString()</td>
+                <td>@exam.MaxScore</td>
+                <td>
+                    @if (isStudent)
+                    {
+                        @if (exam.ResultsReleased)
+                        {
+                            <span class="badge bg-success">Released</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Not yet released</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="badge @(exam.ResultsReleased ? "bg-success" : "bg-warning text-dark")">
+                            @(exam.ResultsReleased ? "Released" : "Provisional")
+                        </span>
+                        <span class="ms-1 text-muted small">@exam.Results.Count result(s)</span>
+                    }
+                </td>
+                <td class="d-flex gap-1">
+                    <a asp-action="Details" asp-route-id="@exam.Id" class="btn btn-sm btn-info">Details</a>
+                    @if (isAdmin)
+                    {
+                        <a asp-action="Edit" asp-route-id="@exam.Id" class="btn btn-sm btn-warning">Edit</a>
+                        @if (!exam.ResultsReleased)
+                        {
+                            <form asp-action="ReleaseResults" asp-route-id="@exam.Id" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-sm btn-success">Release</button>
+                            </form>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
