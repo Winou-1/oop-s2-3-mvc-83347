@@ -1009,6 +1009,109 @@ public class VgcTests
     }
 
 
+    [Fact]
+    public void AssignmentResult_Properties_CanBeSet_IncreasesDomainCoverage()
+    {
+        var result = new AssignmentResult
+        {
+            Id = 1,
+            AssignmentId = 10,
+            StudentProfileId = 5,
+            Score = 85,
+            Feedback = "Excellent"
+        };
+
+        Assert.Equal(1, result.Id);
+        Assert.Equal(10, result.AssignmentId);
+        Assert.Equal(5, result.StudentProfileId);
+        Assert.Equal(85, result.Score);
+        Assert.Equal("Excellent", result.Feedback);
+    }
+
+    [Fact]
+    public async Task BranchesController_Details_ValidId_ReturnsViewWithBranch()
+    {
+        await using var ctx = CreateCtx();
+        var branch = new Branch { Name = "Cork", Address = "123 Street" };
+        ctx.Branches.Add(branch);
+        await ctx.SaveChangesAsync();
+        var controller = new BranchesController(ctx);
+
+        var result = await controller.Details(branch.Id) as Microsoft.AspNetCore.Mvc.ViewResult;
+
+        Assert.NotNull(result);
+        var model = Assert.IsAssignableFrom<Branch>(result.Model);
+        Assert.Equal(branch.Id, model.Id);
+    }
+
+    [Fact]
+    public async Task BranchesController_Edit_ValidModel_RedirectsToIndex()
+    {
+        await using var ctx = CreateCtx();
+        var branch = new Branch { Name = "Galway", Address = "456 Street" };
+        ctx.Branches.Add(branch);
+        await ctx.SaveChangesAsync();
+        var controller = new BranchesController(ctx);
+        branch.Name = "Galway Updated";
+
+        var result = await controller.Edit(branch.Id, branch) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        var saved = await ctx.Branches.FindAsync(branch.Id);
+        Assert.Equal("Galway Updated", saved!.Name);
+    }
+
+    [Fact]
+    public async Task BranchesController_DeleteConfirmed_RemovesBranchAndRedirects()
+    {
+        await using var ctx = CreateCtx();
+        var branch = new Branch { Name = "Limerick", Address = "789 Street" };
+        ctx.Branches.Add(branch);
+        await ctx.SaveChangesAsync();
+        var controller = new BranchesController(ctx);
+
+        var result = await controller.DeleteConfirmed(branch.Id) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        Assert.Empty(ctx.Branches);
+    }
+
+    [Fact]
+    public async Task FacultyProfilesController_AssignCourse_RedirectsToDetails()
+    {
+        await using var ctx = CreateCtx();
+        var faculty = await SeedFacultyAsync(ctx);
+        var (_, course) = await SeedCourseAsync(ctx);
+        var controller = new FacultyProfilesController(ctx);
+
+        var result = await controller.AssignCourse(faculty.Id, course.Id, true) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+
+        Assert.NotNull(result);
+        Assert.Equal("Details", result.ActionName);
+        Assert.Equal(faculty.Id, result.RouteValues!["id"]);
+        Assert.Single(ctx.FacultyCourseAssignments);
+    }
+
+    [Fact]
+    public async Task FacultyProfilesController_RemoveCourseAssignment_RemovesAndRedirects()
+    {
+        await using var ctx = CreateCtx();
+        var faculty = await SeedFacultyAsync(ctx);
+        var (_, course) = await SeedCourseAsync(ctx);
+        var assignment = new FacultyCourseAssignment { FacultyProfileId = faculty.Id, CourseId = course.Id, IsTutor = true };
+        ctx.FacultyCourseAssignments.Add(assignment);
+        await ctx.SaveChangesAsync();
+        var controller = new FacultyProfilesController(ctx);
+
+        var result = await controller.RemoveCourseAssignment(assignment.Id) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+
+        Assert.NotNull(result);
+        Assert.Equal("Details", result.ActionName);
+        Assert.Empty(ctx.FacultyCourseAssignments);
+    }
+
     public class FakeTempDataProvider : Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider
     {
         public IDictionary<string, object> LoadTempData(Microsoft.AspNetCore.Http.HttpContext context)
