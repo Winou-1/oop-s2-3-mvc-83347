@@ -296,12 +296,81 @@ public class VgcTests
     {
         await using var ctx = CreateCtx();
         await SeedCourseAsync(ctx);
-        await SeedCourseAsync(ctx); // second course in second call creates second branch+course
+        await SeedCourseAsync(ctx);
 
         var controller = new CoursesController(ctx);
         var result = await controller.Index() as Microsoft.AspNetCore.Mvc.ViewResult;
         var model = Assert.IsAssignableFrom<IEnumerable<Course>>(result!.Model);
 
         Assert.Equal(2, model.Count());
+    }
+    // ── TEST 13: BranchesController - Index retourne la liste ─────────────
+    [Fact]
+    public async Task BranchesController_Index_ReturnsViewWithBranches()
+    {
+        // Arrange
+        await using var ctx = CreateCtx();
+        ctx.Branches.Add(new Branch { Name = "Test Branch", Address = "123 Test St" });
+        await ctx.SaveChangesAsync();
+        var controller = new BranchesController(ctx);
+
+        // Act
+        var result = await controller.Index() as Microsoft.AspNetCore.Mvc.ViewResult;
+
+        // Assert
+        Assert.NotNull(result);
+        var model = Assert.IsAssignableFrom<IEnumerable<Branch>>(result.Model);
+        Assert.Single(model);
+    }
+
+    // ── TEST 14: BranchesController - Create (Valide) ─────────────────────
+    [Fact]
+    public async Task BranchesController_Create_ValidModel_RedirectsToIndex()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new BranchesController(ctx);
+        var newBranch = new Branch { Name = "New Branch", Address = "456 New St" };
+        var result = await controller.Create(newBranch) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        Assert.Equal(1, await ctx.Branches.CountAsync());
+    }
+
+    // ── TEST 15: BranchesController - Create (Invalide) ───────────────────
+    [Fact]
+    public async Task BranchesController_Create_InvalidModel_ReturnsView()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new BranchesController(ctx);
+        controller.ModelState.AddModelError("Name", "Required");
+        var newBranch = new Branch { Address = "No Name St" };
+        var result = await controller.Create(newBranch) as Microsoft.AspNetCore.Mvc.ViewResult;
+        Assert.NotNull(result);
+        Assert.Equal(newBranch, result.Model);
+        Assert.Equal(0, await ctx.Branches.CountAsync());
+    }
+
+    // ── TEST 16: AssignmentsController - Create (Valide) ──────────────────
+    [Fact]
+    public async Task AssignmentsController_Create_ValidModel_Redirects()
+    {
+        await using var ctx = CreateCtx();
+        var (_, course) = await SeedCourseAsync(ctx);
+        var controller = new AssignmentsController(ctx);
+        var assignment = new Assignment { CourseId = course.Id, Title = "Test Assignment", MaxScore = 100, DueDate = DateTime.Today };
+        var result = await controller.Create(assignment) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+        Assert.NotNull(result);
+        Assert.Equal("Index", result.ActionName);
+        Assert.Equal(course.Id, result.RouteValues!["courseId"]);
+    }
+
+    // ── TEST 17: AssignmentsController - Details retourne 404 si null ─────
+    [Fact]
+    public async Task AssignmentsController_Details_NullId_ReturnsNotFound()
+    {
+        await using var ctx = CreateCtx();
+        var controller = new AssignmentsController(ctx);
+        var result = await controller.Details(null);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.NotFoundResult>(result);
     }
 }

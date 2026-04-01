@@ -23,5 +23,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\VgcCollege.Web\VgcCollege.Web.csproj" />
   </ItemGroup>
+<PropertyGroup>
+	<Exclude>[VgcCollege.Web]AspNetCoreGeneratedDocument.*,[VgcCollege.Web]VgcCollege.Web.Migrations.*,[VgcCollege.Web]Program</Exclude>
+</PropertyGroup>
 
 </Project>
