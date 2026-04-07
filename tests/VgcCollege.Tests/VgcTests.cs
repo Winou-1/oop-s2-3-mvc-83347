@@ -11,10 +11,6 @@ using VgcCollege.Web.Models;
 
 namespace VgcCollege.Tests;
 
-// ══════════════════════════════════════════════════════════════════════════
-//  INFRASTRUCTURE PARTAGÉE
-// ══════════════════════════════════════════════════════════════════════════
-
 file static class Db
 {
     public static ApplicationDbContext Create() =>
@@ -99,10 +95,6 @@ file static class As
         };
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════════
-//  DOMAINE — ENTITÉS
-// ══════════════════════════════════════════════════════════════════════════
 
 public class BranchEntityTests
 {
@@ -961,10 +953,6 @@ public class BranchesControllerTests
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  COURSES CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
-
 public class CoursesControllerTests
 {
     [Fact]
@@ -1140,10 +1128,6 @@ public class CoursesControllerTests
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  ENROLMENTS CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
-
 public class EnrolmentsControllerTests
 {
     [Fact]
@@ -1310,10 +1294,6 @@ public class EnrolmentsControllerTests
         Assert.IsType<NotFoundResult>(await c.DeleteConfirmed(9999));
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════════
-//  ASSIGNMENTS CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
 
 public class AssignmentsControllerTests
 {
@@ -1485,10 +1465,6 @@ public class AssignmentsControllerTests
         Assert.IsType<RedirectToActionResult>(await c.DeleteConfirmed(9999));
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════════
-//  EXAMS CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
 
 public class ExamsControllerTests
 {
@@ -1721,10 +1697,6 @@ public class ExamsControllerTests
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  ATTENDANCE CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
-
 public class AttendanceControllerTests
 {
     [Fact]
@@ -1764,7 +1736,6 @@ public class AttendanceControllerTests
         As.Admin(ctrl);
         var result = await ctrl.Index(enrolment.Id);
         var view = Assert.IsType<ViewResult>(result);
-        // Le controller retourne la CourseEnrolment comme modèle
         var model = Assert.IsType<CourseEnrolment>(view.Model);
         Assert.Equal(enrolment.Id, model.Id);
         await ctx.DisposeAsync();
@@ -1863,10 +1834,6 @@ public class AttendanceControllerTests
         Assert.IsType<NotFoundResult>(await ctrl.Index(9999));
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════════
-//  STUDENT PROFILES CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
 
 public class StudentProfilesControllerTests
 {
@@ -2054,10 +2021,6 @@ public class StudentProfilesControllerTests
         Assert.IsType<NotFoundResult>(await c.DeleteConfirmed(9999));
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════════
-//  FACULTY PROFILES CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
 
 public class FacultyProfilesControllerTests
 {
@@ -2257,10 +2220,6 @@ public class FacultyProfilesControllerTests
         Assert.IsType<NotFoundResult>(await c.DeleteConfirmed(9999));
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════════
-//  HOME CONTROLLER
-// ══════════════════════════════════════════════════════════════════════════
 
 public class HomeControllerTests
 {
