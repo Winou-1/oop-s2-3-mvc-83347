@@ -1,42 +1,67 @@
 ﻿@model VgcCollege.Web.Domain.Assignment
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Title;
+    bool isAdmin = User.IsInRole("Admin");
+    bool isFaculty = User.IsInRole("Faculty");
 }
 
-<h1>Details</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@Model.Title</h1>
+    <div class="d-flex gap-2">
+        @if (isAdmin)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+        }
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</div>
 
-<div>
-    <h4>Assignment</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Course)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Course.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Title)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.MaxScore)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.MaxScore)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DueDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DueDate)
-        </dd>
-    </dl>
+<div class="card mb-4" style="max-width:400px">
+    <div class="card-header bg-dark text-white">Assignment Info</div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Course</dt>
+            <dd class="col-sm-8">
+                <a asp-controller="Courses" asp-action="Details" asp-route-id="@Model.CourseId">
+                    @Model.Course?.Name
+                </a>
+            </dd>
+            <dt class="col-sm-4">Max Score</dt>
+            <dd class="col-sm-8">@Model.MaxScore</dd>
+            <dt class="col-sm-4">Due Date</dt>
+            <dd class="col-sm-8">@Model.DueDate.ToShortDateString()</dd>
+        </dl>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<h3>Student Results (@Model.Results.Count)</h3>
+@if (!Model.Results.Any())
+{
+    <div class="alert alert-info">No results recorded yet.</div>
+}
+else
+{
+    <table class="table table-hover">
+        <thead class="table-secondary">
+            <tr><th>Student</th><th>Score</th><th>%</th><th>Feedback</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Results.OrderByDescending(x => x.Score))
+            {
+                var pct = Model.MaxScore > 0 ? (int)Math.Round(r.Score * 100.0 / Model.MaxScore) : 0;
+                <tr>
+                    <td>@r.StudentProfile?.Name</td>
+                    <td>@r.Score / @Model.MaxScore</td>
+                    <td>
+                        <span class="badge @(pct >= 70 ? "bg-success" : pct >= 50 ? "bg-warning text-dark" : "bg-danger")">
+                            @pct%
+                        </span>
+                    </td>
+                    <td class="text-muted"><em>@(r.Feedback ?? "—")</em></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

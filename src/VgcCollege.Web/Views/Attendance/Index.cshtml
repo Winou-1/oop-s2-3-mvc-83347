@@ -1,53 +1,87 @@
-﻿@model IEnumerable<VgcCollege.Web.Domain.AttendanceRecord>
+﻿@model VgcCollege.Web.Domain.CourseEnrolment
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Attendance";
+    bool canEdit = User.IsInRole("Admin") || User.IsInRole("Faculty");
+    var records = Model.AttendanceRecords.OrderBy(a => a.WeekNumber).ToList();
+    int presentCount = records.Count(a => a.Present);
+    double pct = records.Count > 0 ? Math.Round(presentCount * 100.0 / records.Count, 1) : 0;
 }
 
-<h1>Index</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1>Attendance</h1>
+        <p class="text-muted mb-0">
+            <strong>@Model.StudentProfile?.Name</strong> —
+            <a asp-controller="Courses" asp-action="Details" asp-route-id="@Model.CourseId">@Model.Course?.Name</a>
+        </p>
+    </div>
+    @if (canEdit)
+    {
+        <a asp-action="Create" asp-route-enrolmentId="@Model.Id" class="btn btn-success">+ Add Session</a>
+    }
+</div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.CourseEnrolment)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.WeekNumber)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.SessionDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Present)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.CourseEnrolment.Id)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.WeekNumber)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.SessionDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Present)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+<div class="mb-3">
+    @{
+        string badgeClass = pct >= 80 ? "bg-success" : pct >= 60 ? "bg-warning text-dark" : "bg-danger";
+    }
+    <span class="badge @badgeClass fs-6">
+        Attendance: @presentCount / @records.Count sessions (@pct%)
+    </span>
+</div>
+
+@if (!records.Any())
+{
+    <div class="alert alert-info">No attendance records yet.</div>
 }
-    </tbody>
-</table>
+else
+{
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Week</th>
+                <th>Date</th>
+                <th>Status</th>
+                @if (canEdit)
+                {
+                    <th></th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in records)
+            {
+                <tr>
+                    <td>Week @r.WeekNumber</td>
+                    <td>@r.SessionDate.ToShortDateString()</td>
+                    <td>
+                        @if (r.Present)
+                        {
+                            <span class="badge bg-success">✓ Present</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">✗ Absent</span>
+                        }
+                    </td>
+                    @if (canEdit)
+                    {
+                        <td>
+                            <form asp-action="Toggle" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@r.Id" />
+                                <input type="hidden" name="enrolmentId" value="@Model.Id" />
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    Toggle → @(r.Present ? "Absent" : "Present")
+                                </button>
+                            </form>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-controller="Enrolments" asp-action="Index" class="btn btn-secondary">Back to Enrolments</a>

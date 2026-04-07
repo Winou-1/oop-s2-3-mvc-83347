@@ -1,42 +1,257 @@
 ﻿@model VgcCollege.Web.Domain.Course
+@using VgcCollege.Web.Domain
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Name;
+    bool isAdmin = User.IsInRole("Admin");
+    bool isFaculty = User.IsInRole("Faculty");
+    bool isStudent = User.IsInRole("Student");
 }
 
-<h1>Details</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@Model.Name</h1>
+    <div class="d-flex gap-2">
+        @if (isAdmin)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+        }
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</div>
 
-<div>
-    <h4>Course</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Branch)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Branch.Address)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
-        </dd>
-    </dl>
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Course Info</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Branch</dt>
+                    <dd class="col-sm-8"><strong>@Model.Branch?.Name</strong><br /><small class="text-muted">@Model.Branch?.Address</small></dd>
+                    <dt class="col-sm-4">Start</dt>
+                    <dd class="col-sm-8">@Model.StartDate.ToShortDateString()</dd>
+                    <dt class="col-sm-4">End</dt>
+                    <dd class="col-sm-8">@Model.EndDate.ToShortDateString()</dd>
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        @{
+                            var now = DateTime.Today;
+                            string status = now < Model.StartDate ? "Upcoming" : now > Model.EndDate ? "Completed" : "Active";
+                            string badge = status == "Active" ? "bg-success" : status == "Upcoming" ? "bg-warning text-dark" : "bg-secondary";
+                        }
+                        <span class="badge @badge">@status</span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    @* Faculty assigned — visible to Admin and Faculty *@
+    @if (isAdmin || isFaculty)
+    {
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header bg-dark text-white">Faculty Assigned</div>
+                <div class="card-body p-0">
+                    @if (!Model.FacultyAssignments.Any())
+                    {
+                        <p class="p-3 text-muted mb-0">No faculty assigned.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var fa in Model.FacultyAssignments)
+                            {
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>@fa.FacultyProfile?.Name</span>
+                                    @if (fa.IsTutor)
+                                    {
+                                        <span class="badge bg-info">Tutor</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@* Enrolled Students — Admin sees all; Faculty sees all; Student sees nothing *@
+@if (isAdmin || isFaculty)
+{
+    <h3>Enrolled Students (@Model.Enrolments.Count)</h3>
+    @if (!Model.Enrolments.Any())
+    {
+        <div class="alert alert-info">No students enrolled in this course.</div>
+    }
+    else
+    {
+        <table class="table table-hover mb-4">
+            <thead class="table-secondary">
+                <tr>
+                    <th>Name</th>
+                    <th>Student No.</th>
+                    <th>Enrolled</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model.Enrolments)
+                {
+                    <tr>
+                        <td>@e.StudentProfile?.Name</td>
+                        <td><code>@e.StudentProfile?.StudentNumber</code></td>
+                        <td>@e.EnrolDate.ToShortDateString()</td>
+                        <td>
+                            <span class="badge @(e.Status == EnrolmentStatus.Active ? "bg-success" : "bg-secondary")">@e.Status</span>
+                        </td>
+                        <td>
+                            <a asp-controller="Attendance" asp-action="Index" asp-route-enrolmentId="@e.Id"
+                               class="btn btn-sm btn-outline-info">Attendance</a>
+                            @if (isAdmin)
+                            {
+                                <a asp-controller="StudentProfiles" asp-action="Details" asp-route-id="@e.StudentProfileId"
+                                   class="btn btn-sm btn-outline-secondary">Profile</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (isAdmin)
+    {
+        <div class="mb-4">
+            <a asp-controller="Enrolments" asp-action="Create" class="btn btn-outline-success btn-sm">+ Enrol a Student</a>
+        </div>
+    }
+}
+
+@* Assignments *@
+<h3>Assignments (@Model.Assignments.Count)</h3>
+@if (!Model.Assignments.Any())
+{
+    <div class="alert alert-info">No assignments for this course.</div>
+}
+else
+{
+    <table class="table table-hover mb-4">
+        <thead class="table-secondary">
+            <tr>
+                <th>Title</th>
+                <th>Max Score</th>
+                <th>Due Date</th>
+                @if (isAdmin || isFaculty)
+                {
+                    <th>Results</th>
+                    <th></th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Assignments.OrderBy(x => x.DueDate))
+            {
+                <tr>
+                    <td>@a.Title</td>
+                    <td>@a.MaxScore</td>
+                    <td>@a.DueDate.ToShortDateString()</td>
+                    @if (isAdmin || isFaculty)
+                    {
+                        <td><span class="badge bg-primary">@a.Results.Count result(s)</span></td>
+                        <td>
+                            <a asp-controller="Assignments" asp-action="Details" asp-route-id="@a.Id"
+                               class="btn btn-sm btn-outline-info">View</a>
+                            @if (isAdmin)
+                            {
+                                <a asp-controller="Assignments" asp-action="Edit" asp-route-id="@a.Id"
+                                   class="btn btn-sm btn-outline-warning">Edit</a>
+                                <a asp-controller="Assignments" asp-action="Delete" asp-route-id="@a.Id"
+                                   class="btn btn-sm btn-outline-danger">Delete</a>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@if (isAdmin)
+{
+    <div class="mb-4">
+        <a asp-controller="Assignments" asp-action="Create" class="btn btn-outline-success btn-sm">+ Add Assignment</a>
+    </div>
+}
+
+@* Exams *@
+<h3>Exams (@Model.Exams.Count)</h3>
+@if (!Model.Exams.Any())
+{
+    <div class="alert alert-info">No exams for this course.</div>
+}
+else
+{
+    <table class="table table-hover mb-4">
+        <thead class="table-secondary">
+            <tr>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Max Score</th>
+                <th>Results</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ex in Model.Exams.OrderBy(x => x.Date))
+            {
+                <tr>
+                    <td>@ex.Title</td>
+                    <td>@ex.Date.ToShortDateString()</td>
+                    <td>@ex.MaxScore</td>
+                    <td>
+                        @if (isStudent)
+                        {
+                            <span class="badge @(ex.ResultsReleased ? "bg-success" : "bg-secondary")">
+                                @(ex.ResultsReleased ? "Released" : "Pending")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge @(ex.ResultsReleased ? "bg-success" : "bg-warning text-dark")">
+                                @(ex.ResultsReleased ? "Released" : "Provisional")
+                            </span>
+                            <small class="text-muted ms-1">@ex.Results.Count result(s)</small>
+                        }
+                    </td>
+                    <td>
+                        <a asp-controller="Exams" asp-action="Details" asp-route-id="@ex.Id"
+                           class="btn btn-sm btn-outline-info">View</a>
+                        @if (isAdmin)
+                        {
+                            <a asp-controller="Exams" asp-action="Edit" asp-route-id="@ex.Id"
+                               class="btn btn-sm btn-outline-warning">Edit</a>
+                            @if (!ex.ResultsReleased)
+                            {
+                                <form asp-controller="Exams" asp-action="ReleaseResults" asp-route-id="@ex.Id"
+                                      method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-sm btn-outline-success">Release</button>
+                                </form>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@if (isAdmin)
+{
+    <div class="mb-4">
+        <a asp-controller="Exams" asp-action="Create" asp-route-courseId="@Model.Id"
+           class="btn btn-outline-success btn-sm">+ Add Exam</a>
+    </div>
+}

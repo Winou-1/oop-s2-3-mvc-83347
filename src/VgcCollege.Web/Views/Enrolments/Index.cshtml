@@ -1,53 +1,71 @@
 ﻿@model IEnumerable<VgcCollege.Web.Domain.CourseEnrolment>
+@using VgcCollege.Web.Domain
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = User.IsInRole("Student") ? "My Courses" : "Enrolments";
+    bool isAdmin = User.IsInRole("Admin");
+    bool isStudent = User.IsInRole("Student");
 }
 
-<h1>Index</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@ViewData["Title"]</h1>
+    @if (isAdmin)
+    {
+        <a asp-action="Create" class="btn btn-success">+ New Enrolment</a>
+    }
+</div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.StudentProfile)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Course)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.EnrolDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.StudentProfile.Email)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Course.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.EnrolDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Status)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No enrolments found.</div>
 }
-    </tbody>
-</table>
+else
+{
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                @if (!isStudent)
+                {
+                    <th>Student</th>
+                }
+                <th>Course</th>
+                <th>Branch</th>
+                <th>Enrolled</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    @if (!isStudent)
+                    {
+                        <td>@item.StudentProfile?.Name</td>
+                    }
+                    <td>
+                        <a asp-controller="Courses" asp-action="Details" asp-route-id="@item.CourseId">
+                            @item.Course?.Name
+                        </a>
+                    </td>
+                    <td>@item.Course?.Branch?.Name</td>
+                    <td>@item.EnrolDate.ToShortDateString()</td>
+                    <td>
+                        <span class="badge @(item.Status == EnrolmentStatus.Active ? "bg-success" : "bg-secondary")">
+                            @item.Status
+                        </span>
+                    </td>
+                    <td class="d-flex gap-1">
+                        <a asp-controller="Attendance" asp-action="Index" asp-route-enrolmentId="@item.Id"
+                           class="btn btn-sm btn-outline-info">Attendance</a>
+                        @if (isAdmin)
+                        {
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Remove</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

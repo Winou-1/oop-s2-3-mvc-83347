@@ -1,48 +1,125 @@
 ﻿@model VgcCollege.Web.Domain.Exam
+@using VgcCollege.Web.Domain
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Title;
+    bool isAdmin = User.IsInRole("Admin");
+    bool isFaculty = User.IsInRole("Faculty");
+    bool isStudent = User.IsInRole("Student");
+    var studentResult = ViewBag.StudentResult as ExamResult;
 }
 
-<h1>Details</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@Model.Title</h1>
+    <div class="d-flex gap-2">
+        @if (isAdmin)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            @if (!Model.ResultsReleased)
+            {
+                <form asp-action="ReleaseResults" asp-route-id="@Model.Id" method="post" style="display:inline">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-success">Release Results</button>
+                </form>
+            }
+            <a asp-action="AddResult" asp-route-examId="@Model.Id" class="btn btn-primary">+ Add Result</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+        }
+        @if (isFaculty)
+        {
+            <a asp-action="AddResult" asp-route-examId="@Model.Id" class="btn btn-primary">+ Add Result</a>
+        }
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</div>
 
-<div>
-    <h4>Exam</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Course)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Course.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Title)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Title)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Date)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Date)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.MaxScore)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.MaxScore)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ResultsReleased)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ResultsReleased)
-        </dd>
-    </dl>
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Exam Info</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Course</dt>
+                    <dd class="col-sm-8">
+                        <a asp-controller="Courses" asp-action="Details" asp-route-id="@Model.CourseId">
+                            @Model.Course?.Name
+                        </a>
+                    </dd>
+                    <dt class="col-sm-4">Date</dt>
+                    <dd class="col-sm-8">@Model.Date.ToShortDateString()</dd>
+                    <dt class="col-sm-4">Max Score</dt>
+                    <dd class="col-sm-8">@Model.MaxScore</dd>
+                    <dt class="col-sm-4">Results</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.ResultsReleased ? "bg-success" : "bg-warning text-dark")">
+                            @(Model.ResultsReleased ? "Released" : "Provisional — not visible to students")
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@* Student view: show only their own result if released *@
+@if (isStudent)
+{
+    @if (!Model.ResultsReleased)
+    {
+        <div class="alert alert-warning">
+            Results for this exam have not been released yet.
+        </div>
+    }
+    else if (studentResult != null)
+    {
+        <div class="card border-success" style="max-width:350px">
+            <div class="card-header bg-success text-white">Your Result</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Score</dt>
+                    <dd class="col-sm-8">@studentResult.Score / @Model.MaxScore</dd>
+                    <dt class="col-sm-4">Grade</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary fs-6">@studentResult.Grade</span></dd>
+                </dl>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">No result recorded for you on this exam.</div>
+    }
+}
+
+@* Admin and Faculty: see all results *@
+@if (isAdmin || isFaculty)
+{
+    <h3>All Results (@Model.Results.Count)</h3>
+    @if (!Model.Results.Any())
+    {
+        <div class="alert alert-info">No results recorded yet.</div>
+    }
+    else
+    {
+        <table class="table table-hover">
+            <thead class="table-secondary">
+                <tr><th>Student</th><th>Score</th><th>%</th><th>Grade</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Results.OrderByDescending(x => x.Score))
+                {
+                    var pct = Model.MaxScore > 0 ? (int)Math.Round(r.Score * 100.0 / Model.MaxScore) : 0;
+                    <tr>
+                        <td>@r.StudentProfile?.Name</td>
+                        <td>@r.Score / @Model.MaxScore</td>
+                        <td>
+                            <span class="badge @(pct >= 70 ? "bg-success" : pct >= 50 ? "bg-warning text-dark" : "bg-danger")">
+                                @pct%
+                            </span>
+                        </td>
+                        <td><span class="badge bg-primary">@r.Grade</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}

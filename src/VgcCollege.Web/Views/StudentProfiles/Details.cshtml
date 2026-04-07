@@ -1,60 +1,179 @@
 ﻿@model VgcCollege.Web.Domain.StudentProfile
+@using VgcCollege.Web.Domain
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Name;
+    bool isAdmin = User.IsInRole("Admin");
+    bool isFaculty = User.IsInRole("Faculty");
+    bool isStudent = User.IsInRole("Student");
 }
 
-<h1>Details</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@Model.Name</h1>
+    <div class="d-flex gap-2">
+        @if (isAdmin)
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+        }
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</div>
 
-<div>
-    <h4>StudentProfile</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.IdentityUser)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.IdentityUser.Id)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Email)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Email)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Phone)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Phone)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Address)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Address)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DateOfBirth)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DateOfBirth)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StudentNumber)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StudentNumber)
-        </dd>
-    </dl>
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Student Profile</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Student No.</dt>
+                    <dd class="col-sm-8"><code>@Model.StudentNumber</code></dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">@Model.Email</dd>
+
+                    @* Phone and Address only for Admin or Tutors (Faculty) *@
+                    @if (isAdmin || isFaculty)
+                    {
+                        <dt class="col-sm-4">Phone</dt>
+                        <dd class="col-sm-8">@(Model.Phone ?? "—")</dd>
+                        <dt class="col-sm-4">Address</dt>
+                        <dd class="col-sm-8">@(Model.Address ?? "—")</dd>
+                        <dt class="col-sm-4">Date of Birth</dt>
+                        <dd class="col-sm-8">@(Model.DateOfBirth?.ToShortDateString() ?? "—")</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@* Enrolments *@
+<h3>Enrolments (@Model.Enrolments.Count)</h3>
+@if (!Model.Enrolments.Any())
+{
+    <div class="alert alert-info">No enrolments found.</div>
+}
+else
+{
+    <table class="table table-hover mb-4">
+        <thead class="table-secondary">
+            <tr>
+                <th>Course</th>
+                <th>Enrolled</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model.Enrolments)
+            {
+                <tr>
+                    <td>
+                        <a asp-controller="Courses" asp-action="Details" asp-route-id="@e.CourseId">
+                            @e.Course?.Name
+                        </a>
+                    </td>
+                    <td>@e.EnrolDate.ToShortDateString()</td>
+                    <td>
+                        <span class="badge @(e.Status == EnrolmentStatus.Active ? "bg-success" : "bg-secondary")">
+                            @e.Status
+                        </span>
+                    </td>
+                    <td>
+                        <a asp-controller="Attendance" asp-action="Index" asp-route-enrolmentId="@e.Id"
+                           class="btn btn-sm btn-outline-info">Attendance</a>
+                        @if (isAdmin)
+                        {
+                            <a asp-controller="Enrolments" asp-action="Edit" asp-route-id="@e.Id"
+                               class="btn btn-sm btn-outline-warning">Edit</a>
+                            <a asp-controller="Enrolments" asp-action="Delete" asp-route-id="@e.Id"
+                               class="btn btn-sm btn-outline-danger">Remove</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* Assignment Results *@
+<h3>Assignment Results (@Model.AssignmentResults.Count)</h3>
+@if (!Model.AssignmentResults.Any())
+{
+    <div class="alert alert-info">No assignment results.</div>
+}
+else
+{
+    <table class="table table-hover mb-4">
+        <thead class="table-secondary">
+            <tr><th>Assignment</th><th>Score</th><th>Max</th><th>%</th><th>Feedback</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.AssignmentResults.OrderByDescending(x => x.Assignment?.DueDate))
+            {
+                var pct = r.Assignment?.MaxScore > 0
+                    ? (int)Math.Round(r.Score * 100.0 / r.Assignment.MaxScore)
+                    : 0;
+                <tr>
+                    <td>@r.Assignment?.Title</td>
+                    <td>@r.Score</td>
+                    <td>@r.Assignment?.MaxScore</td>
+                    <td>
+                        <span class="badge @(pct >= 70 ? "bg-success" : pct >= 50 ? "bg-warning text-dark" : "bg-danger")">
+                            @pct%
+                        </span>
+                    </td>
+                    <td class="text-muted"><em>@(r.Feedback ?? "—")</em></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@* Exam Results — students only see released; admin/faculty see all *@
+@{
+    var examResults = isAdmin || isFaculty
+        ? Model.ExamResults.ToList()
+        : Model.ExamResults.Where(er => er.Exam?.ResultsReleased == true).ToList();
+}
+<h3>Exam Results (@examResults.Count @(isStudent ? "released" : "total"))</h3>
+@if (!examResults.Any())
+{
+    <div class="alert alert-info">No @(isStudent ? "released" : "") exam results.</div>
+}
+else
+{
+    <table class="table table-hover mb-4">
+        <thead class="table-secondary">
+            <tr>
+                <th>Exam</th>
+                <th>Score</th>
+                <th>Max</th>
+                <th>Grade</th>
+                @if (isAdmin || isFaculty)
+                {
+                    <th>Status</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in examResults)
+            {
+                <tr>
+                    <td>@r.Exam?.Title</td>
+                    <td>@r.Score</td>
+                    <td>@r.Exam?.MaxScore</td>
+                    <td><span class="badge bg-primary">@r.Grade</span></td>
+                    @if (isAdmin || isFaculty)
+                    {
+                        <td>
+                            <span class="badge @(r.Exam?.ResultsReleased == true ? "bg-success" : "bg-warning text-dark")">
+                                @(r.Exam?.ResultsReleased == true ? "Released" : "Provisional")
+                            </span>
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}

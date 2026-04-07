@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +9,7 @@ using VgcCollege.Web.Domain;
 
 namespace VgcCollege.Web.Controllers
 {
+    [Authorize(Roles = "Admin,Faculty")]
     public class AssignmentsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -22,41 +22,40 @@ namespace VgcCollege.Web.Controllers
         // GET: Assignments
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Assignments.Include(a => a.Course);
-            return View(await applicationDbContext.ToListAsync());
+            var assignments = await _context.Assignments
+                .Include(a => a.Course).ThenInclude(c => c.Branch)
+                .Include(a => a.Results)
+                .OrderBy(a => a.DueDate)
+                .ToListAsync();
+            return View(assignments);
         }
 
         // GET: Assignments/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var assignment = await _context.Assignments
                 .Include(a => a.Course)
+                .Include(a => a.Results).ThenInclude(r => r.StudentProfile)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (assignment == null)
-            {
-                return NotFound();
-            }
 
+            if (assignment == null) return NotFound();
             return View(assignment);
         }
 
-        // GET: Assignments/Create
+        // GET: Assignments/Create — Admin only
+        [Authorize(Roles = "Admin")]
         public IActionResult Create()
         {
-            ViewData["CourseId"] = new SelectList(_context.Courses, "Id", "Name");
+            ViewData["CourseId"] = new SelectList(_context.Courses.Include(c => c.Branch)
+                .Select(c => new { c.Id, Display = c.Name + " (" + c.Branch.Name + ")" }), "Id", "Display");
             return View();
         }
 
-        // POST: Assignments/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([Bind("Id,CourseId,Title,MaxScore,DueDate")] Assignment assignment)
         {
             if (ModelState.IsValid)
@@ -69,35 +68,23 @@ namespace VgcCollege.Web.Controllers
             return View(assignment);
         }
 
-        // GET: Assignments/Edit/5
+        // GET: Assignments/Edit/5 — Admin only
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
             var assignment = await _context.Assignments.FindAsync(id);
-            if (assignment == null)
-            {
-                return NotFound();
-            }
+            if (assignment == null) return NotFound();
             ViewData["CourseId"] = new SelectList(_context.Courses, "Id", "Name", assignment.CourseId);
             return View(assignment);
         }
 
-        // POST: Assignments/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,CourseId,Title,MaxScore,DueDate")] Assignment assignment)
         {
-            if (id != assignment.Id)
-            {
-                return NotFound();
-            }
-
+            if (id != assignment.Id) return NotFound();
             if (ModelState.IsValid)
             {
                 try
@@ -107,14 +94,8 @@ namespace VgcCollege.Web.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!AssignmentExists(assignment.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    if (!AssignmentExists(assignment.Id)) return NotFound();
+                    else throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -122,43 +103,31 @@ namespace VgcCollege.Web.Controllers
             return View(assignment);
         }
 
-        // GET: Assignments/Delete/5
+        // GET: Assignments/Delete/5 — Admin only
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
             var assignment = await _context.Assignments
                 .Include(a => a.Course)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (assignment == null)
-            {
-                return NotFound();
-            }
-
+            if (assignment == null) return NotFound();
             return View(assignment);
         }
 
-        // POST: Assignments/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var assignment = await _context.Assignments.FindAsync(id);
             if (assignment != null)
-            {
                 _context.Assignments.Remove(assignment);
-            }
-
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool AssignmentExists(int id)
-        {
-            return _context.Assignments.Any(e => e.Id == id);
-        }
+        private bool AssignmentExists(int id) =>
+            _context.Assignments.Any(e => e.Id == id);
     }
 }
