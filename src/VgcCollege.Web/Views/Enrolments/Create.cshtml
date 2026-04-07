@@ -1,4 +1,5 @@
-﻿@model VgcCollege.Web.Domain.CourseEnrolment
+﻿@using VgcCollege.Web.Domain
+@model VgcCollege.Web.Domain.CourseEnrolment
 
 @{
     ViewData["Title"] = "Create";
@@ -25,9 +26,10 @@
                 <input asp-for="EnrolDate" class="form-control" />
                 <span asp-validation-for="EnrolDate" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control"></select>
+                <select asp-for="Status" class="form-control"
+                        asp-items="Html.GetEnumSelectList<EnrolmentStatus>()"></select>
                 <span asp-validation-for="Status" class="text-danger"></span>
             </div>
             <div class="form-group">

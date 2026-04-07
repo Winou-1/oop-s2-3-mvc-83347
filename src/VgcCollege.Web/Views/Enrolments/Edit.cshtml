@@ -1,4 +1,5 @@
 ﻿@model VgcCollege.Web.Domain.CourseEnrolment
+@using VgcCollege.Web.Domain
 
 @{
     ViewData["Title"] = "Edit";
@@ -13,37 +14,31 @@
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="StudentProfileId" class="control-label"></label>
                 <select asp-for="StudentProfileId" class="form-control" asp-items="ViewBag.StudentProfileId"></select>
                 <span asp-validation-for="StudentProfileId" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="CourseId" class="control-label"></label>
                 <select asp-for="CourseId" class="form-control" asp-items="ViewBag.CourseId"></select>
                 <span asp-validation-for="CourseId" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="EnrolDate" class="control-label"></label>
                 <input asp-for="EnrolDate" class="form-control" />
                 <span asp-validation-for="EnrolDate" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control"></select>
+                <select asp-for="Status" class="form-control"
+                        asp-items="Html.GetEnumSelectList<EnrolmentStatus>()"></select>
                 <span asp-validation-for="Status" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary ms-2">Back to List</a>
             </div>
         </form>
     </div>
 </div>
-
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
